@@ -15,4 +15,5 @@ Thomas Ochsner, Kevin Peters, & Mike Justus West
      usbcore
      uhci_hcd or ohci_hcd or ehci_hcd
      usbhid
+     
 1.4 Not Applicable. We only need to modify existing modules.
