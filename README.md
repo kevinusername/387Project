@@ -19,3 +19,18 @@ Thomas Ochsner, Kevin Peters, & Mike Justus West
 - usbhid
 
 1.4 Not Applicable. We only need to modify existing modules.
+
+## Detailed Desgin
+2.1
+  - input
+  - mousedev
+  - keydev
+  - usbcore
+  - uhci_hcd or ohci_hcd or ehci_hcd
+  - usbhid
+
+2.2 Not Applicable
+
+2.3 TODO
+
+2.4 No added command line options.
