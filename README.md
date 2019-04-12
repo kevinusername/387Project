@@ -34,13 +34,14 @@ Not Applicable. We only need to modify existing modules.
 - expand-common.c
 - expand-common.h
 
-### 2.2
-
+### 2.2 
 Not Applicable. Our project will be alterting the existing `expand` command so that its default behavior is to overwrite the source file with the converted version.
 
 ### 2.3 TODO
 ![image](/new.jpg)
 
-### 2.4
 
-Ubuntu Linux by default has the `expand` command as part of the GNU Coreutils that are included with the distribution. We will be using the [existing documentation for expand](https://www.gnu.org/software/coreutils/manual/html_node/expand-invocation.html#expand-invocation), with the only difference being the default output behavior. In its standard form, the command outputs to `STDOUT`, but in our version we will have commmand overwrite the source file. In essence, we will be simulating running `expand FILE_NAME > FILE_NAME`, but without the need for directing the output. Not only is this convient, but it adds the utility so that running expand with a selector, such as `expand *.c`, could be used to convert a large amount of files at once. This cannot be easily replicated using the `>` operator in bash, since it requires a specified target file.
+![diagram](diagramBest.JPG)
+
+### 2.4 
+Ubuntu Linux by default has the `expand` command as part of the GNU Coreutils that are included with the distribution. We will be using the [existing documentation for expand.c](https://www.gnu.org/software/coreutils/manual/html_node/expand-invocation.html#expand-invocation), with the only difference being the default output behavior. In its standard form, the command outputs to `STDOUT`, but in our version we will have commmand overwrite the source file. In essence, we will be simulating running `expand FILE_NAME > FILE_NAME`, but without the need for directing the output. Not only is this convient, but it adds the utility so that running expand with a selector, such as `expand *.c`, could be used to convert a large amount of files at once. This cannot be easily replicated using the `>` operator in bash, since it requires a specified target file.
