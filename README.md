@@ -39,6 +39,7 @@ Not Applicable. We only need to modify existing modules.
 Not Applicable. Our project will be alterting the existing `expand` command so that its default behavior is to overwrite the source file with the converted version.
 
 ### 2.3 TODO
+![image](/new.jpg)
 
 ### 2.4
 
