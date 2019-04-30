@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
 
     set_file_list((optind < argc) ? &argv[optind] : NULL);
 
-    expand(argv[1]);
+    expand(argv[argc - 1]);
 
     cleanup_file_list_stdin();
 
