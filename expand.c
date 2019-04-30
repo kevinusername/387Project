@@ -34,205 +34,213 @@
 
 #include <config.h>
 
-#include <stdio.h>
-#include <getopt.h>
-#include <sys/types.h>
-#include "system.h"
 #include "die.h"
+#include "system.h"
 #include "xstrndup.h"
+#include <getopt.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 
 #include "expand-common.h"
 
 /* The official name of this program (e.g., no 'g' prefix).  */
 #define PROGRAM_NAME "expand"
 
-#define AUTHORS proper_name ("David MacKenzie")
+#define AUTHORS proper_name("David MacKenzie")
 
 static char const shortopts[] = "it:0::1::2::3::4::5::6::7::8::9::";
+char *og_file_name;
+char *temp_file_name;
 
-static struct option const longopts[] =
-{
-  {"tabs", required_argument, NULL, 't'},
-  {"initial", no_argument, NULL, 'i'},
-  {GETOPT_HELP_OPTION_DECL},
-  {GETOPT_VERSION_OPTION_DECL},
-  {NULL, 0, NULL, 0}
-};
+static struct option const longopts[] = {{"tabs", required_argument, NULL, 't'},
+                                         {"initial", no_argument, NULL, 'i'},
+                                         {GETOPT_HELP_OPTION_DECL},
+                                         {GETOPT_VERSION_OPTION_DECL},
+                                         {NULL, 0, NULL, 0}};
 
-void
-usage (int status)
-{
-  if (status != EXIT_SUCCESS)
-    emit_try_help ();
-  else
-    {
-      printf (_("\
+void usage(int status) {
+    if (status != EXIT_SUCCESS)
+        emit_try_help();
+    else {
+        printf(_("\
 Usage: %s [OPTION]... [FILE]...\n\
 "),
-              program_name);
-      fputs (_("\
+               program_name);
+        fputs(_("\
 Convert tabs in each FILE to spaces, writing to standard output.\n\
-"), stdout);
+"),
+              stdout);
 
-      emit_stdin_note ();
-      emit_mandatory_arg_note ();
+        emit_stdin_note();
+        emit_mandatory_arg_note();
 
-      fputs (_("\
+        fputs(_("\
   -i, --initial    do not convert tabs after non blanks\n\
   -t, --tabs=N     have tabs N characters apart, not 8\n\
-"), stdout);
-      emit_tab_list_info ();
-      fputs (HELP_OPTION_DESCRIPTION, stdout);
-      fputs (VERSION_OPTION_DESCRIPTION, stdout);
-      emit_ancillary_info (PROGRAM_NAME);
+"),
+              stdout);
+        emit_tab_list_info();
+        fputs(HELP_OPTION_DESCRIPTION, stdout);
+        fputs(VERSION_OPTION_DESCRIPTION, stdout);
+        emit_ancillary_info(PROGRAM_NAME);
     }
-  exit (status);
+    exit(status);
 }
-
 
 /* Change tabs to spaces, writing to stdout.
    Read each file in 'file_list', in order.  */
 
-static void
-expand (void)
-{
-  /* Input stream.  */
-  FILE *fp = next_file (NULL);
+static void expand(char *file_name) {
+    /* Input stream.  */
+    FILE *fp = next_file(NULL);
 
-  if (!fp)
-    return;
+    char *name_prefix = "expanded_";
+    temp_file_name = malloc(strlen(name_prefix) + strlen(file_name) + 1);
+    strcpy(temp_file_name, name_prefix);
+    strcat(temp_file_name, file_name);
+    FILE *new_file = fopen(temp_file_name, "w+");
 
-  while (true)
-    {
-      /* Input character, or EOF.  */
-      int c;
+    og_file_name = file_name;
 
-      /* If true, perform translations.  */
-      bool convert = true;
+    if (!fp)
+        return;
 
+    while (true) {
+        /* Input character, or EOF.  */
+        int c;
 
-      /* The following variables have valid values only when CONVERT
-         is true:  */
+        /* If true, perform translations.  */
+        bool convert = true;
 
-      /* Column of next input character.  */
-      uintmax_t column = 0;
+        /* The following variables have valid values only when CONVERT
+           is true:  */
 
-      /* Index in TAB_LIST of next tab stop to examine.  */
-      size_t tab_index = 0;
+        /* Column of next input character.  */
+        uintmax_t column = 0;
 
+        /* Index in TAB_LIST of next tab stop to examine.  */
+        size_t tab_index = 0;
 
-      /* Convert a line of text.  */
+        /* Convert a line of text.  */
 
-      do
-        {
-          while ((c = getc (fp)) < 0 && (fp = next_file (fp)))
-            continue;
+        do {
+            while ((c = getc(fp)) < 0 && (fp = next_file(fp)))
+                continue;
 
-          if (convert)
-            {
-              if (c == '\t')
-                {
-                  /* Column the next input tab stop is on.  */
-                  uintmax_t next_tab_column;
-                  bool last_tab IF_LINT (=0);
+            if (convert) {
+                if (c == '\t') {
+                    /* Column the next input tab stop is on.  */
+                    uintmax_t next_tab_column;
+                    bool last_tab IF_LINT(= 0);
 
-                  next_tab_column = get_next_tab_column (column, &tab_index,
-                                                         &last_tab);
+                    next_tab_column =
+                        get_next_tab_column(column, &tab_index, &last_tab);
 
-                  if (last_tab)
-                    next_tab_column = column + 1;
+                    if (last_tab)
+                        next_tab_column = column + 1;
 
-                  if (next_tab_column < column)
-                    die (EXIT_FAILURE, 0, _("input line is too long"));
+                    if (next_tab_column < column)
+                        die(EXIT_FAILURE, 0, _("input line is too long"));
 
-                  while (++column < next_tab_column)
-                    if (putchar (' ') < 0)
-                      die (EXIT_FAILURE, errno, _("write error"));
+                    while (++column < next_tab_column)
+                        fputc(' ', new_file);
+                    // if (putchar (' ') < 0)
+                    //   die (EXIT_FAILURE, errno, _("write error"));
 
-                  c = ' ';
-                }
-              else if (c == '\b')
-                {
-                  /* Go back one column, and force recalculation of the
-                     next tab stop.  */
-                  column -= !!column;
-                  tab_index -= !!tab_index;
-                }
-              else
-                {
-                  column++;
-                  if (!column)
-                    die (EXIT_FAILURE, 0, _("input line is too long"));
+                    c = ' ';
+                } else if (c == '\b') {
+                    /* Go back one column, and force recalculation of the
+                       next tab stop.  */
+                    column -= !!column;
+                    tab_index -= !!tab_index;
+                } else {
+                    column++;
+                    if (!column)
+                        die(EXIT_FAILURE, 0, _("input line is too long"));
                 }
 
-              convert &= convert_entire_line || !! isblank (c);
+                convert &= convert_entire_line || !!isblank(c);
             }
 
-          if (c < 0)
-            return;
+            if (c < 0) {
+                fclose(new_file);
+                return;
+            }
 
-          if (putchar (c) < 0)
-            die (EXIT_FAILURE, errno, _("write error"));
-        }
-      while (c != '\n');
+            fputc(c, new_file);
+            // if (putchar (c) < 0)
+            //   die (EXIT_FAILURE, errno, _("write error"));
+        } while (c != '\n');
     }
 }
 
-int
-main (int argc, char **argv)
-{
-  int c;
+void swap_files() {
+    remove(og_file_name);
+    rename(temp_file_name, og_file_name);
+    free(temp_file_name);
+}
 
-  initialize_main (&argc, &argv);
-  set_program_name (argv[0]);
-  setlocale (LC_ALL, "");
-  bindtextdomain (PACKAGE, LOCALEDIR);
-  textdomain (PACKAGE);
+int main(int argc, char **argv) {
+    int c;
 
-  atexit (close_stdout);
-  convert_entire_line = true;
+    initialize_main(&argc, &argv);
+    set_program_name(argv[0]);
+    setlocale(LC_ALL, "");
+    bindtextdomain(PACKAGE, LOCALEDIR);
+    textdomain(PACKAGE);
 
-  while ((c = getopt_long (argc, argv, shortopts, longopts, NULL)) != -1)
-    {
-      switch (c)
-        {
+    atexit(close_stdout);
+    convert_entire_line = true;
+
+    while ((c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+        switch (c) {
         case 'i':
-          convert_entire_line = false;
-          break;
+            convert_entire_line = false;
+            break;
 
         case 't':
-          parse_tab_stops (optarg);
-          break;
+            parse_tab_stops(optarg);
+            break;
 
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-          if (optarg)
-            parse_tab_stops (optarg - 1);
-          else
-            {
-              char tab_stop[2];
-              tab_stop[0] = c;
-              tab_stop[1] = '\0';
-              parse_tab_stops (tab_stop);
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            if (optarg)
+                parse_tab_stops(optarg - 1);
+            else {
+                char tab_stop[2];
+                tab_stop[0] = c;
+                tab_stop[1] = '\0';
+                parse_tab_stops(tab_stop);
             }
-          break;
+            break;
 
-        case_GETOPT_HELP_CHAR;
+            case_GETOPT_HELP_CHAR;
 
-        case_GETOPT_VERSION_CHAR (PROGRAM_NAME, AUTHORS);
+            case_GETOPT_VERSION_CHAR(PROGRAM_NAME, AUTHORS);
 
         default:
-          usage (EXIT_FAILURE);
+            usage(EXIT_FAILURE);
         }
     }
 
-  finalize_tab_stops ();
+    finalize_tab_stops();
 
-  set_file_list ( (optind < argc) ? &argv[optind] : NULL);
+    set_file_list((optind < argc) ? &argv[optind] : NULL);
 
-  expand ();
+    expand(argv[1]);
 
-  cleanup_file_list_stdin ();
+    cleanup_file_list_stdin();
 
-  return exit_status;
+    swap_files();
+
+    return exit_status;
 }
