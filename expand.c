@@ -95,12 +95,14 @@ static void expand(char *file_name) {
     /* Input stream.  */
     FILE *fp = next_file(NULL);
 
+    /* generate a temporary file name, and open/create said file */
     char *name_prefix = "expanded_";
     temp_file_name = malloc(strlen(name_prefix) + strlen(file_name) + 1);
     strcpy(temp_file_name, name_prefix);
     strcat(temp_file_name, file_name);
     FILE *new_file = fopen(temp_file_name, "w+");
 
+    /* store original file name */
     og_file_name = file_name;
 
     if (!fp)
@@ -145,8 +147,6 @@ static void expand(char *file_name) {
 
                     while (++column < next_tab_column)
                         fputc(' ', new_file);
-                    // if (putchar (' ') < 0)
-                    //   die (EXIT_FAILURE, errno, _("write error"));
 
                     c = ' ';
                 } else if (c == '\b') {
@@ -168,14 +168,15 @@ static void expand(char *file_name) {
                 return;
             }
 
+            /* write current character to file */
             fputc(c, new_file);
-            // if (putchar (c) < 0)
-            //   die (EXIT_FAILURE, errno, _("write error"));
+
         } while (c != '\n');
     }
 }
 
 void swap_files() {
+    /* replace the old file with the new expanded file */
     remove(og_file_name);
     rename(temp_file_name, og_file_name);
     free(temp_file_name);
