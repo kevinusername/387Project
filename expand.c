@@ -47,7 +47,7 @@
 /* The official name of this program (e.g., no 'g' prefix).  */
 #define PROGRAM_NAME "expand"
 
-#define AUTHORS proper_name("David MacKenzie")
+#define AUTHORS proper_name("David MacKenzie, Kevin Peters, Michael West, Thomas Ochsner")
 
 static char const shortopts[] = "it:0::1::2::3::4::5::6::7::8::9::";
 char *og_file_name;
