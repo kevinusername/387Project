@@ -1,18 +1,18 @@
 /* expand-common - common functionality for expand/unexapnd
-   Copyright (C) 1989-2017 Free Software Foundation, Inc.
+  Copyright (C) 1989-2017 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation, either version 3 of the License, or
-   (at your option) any later version.
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -141,7 +141,9 @@ extern void parse_tab_stops(char const *stops) {
             have_tabval = false;
         } else if (*stops == '/') {
             if (have_tabval) {
-                error(0, 0, _("'/' specifier not at start of number: %s"),
+                error(0, 0,
+                      _("'/' specifier not at start of number: "
+                        "%s"),
                       quote(stops));
                 ok = false;
             }
@@ -149,7 +151,9 @@ extern void parse_tab_stops(char const *stops) {
             increment_tabval = false;
         } else if (*stops == '+') {
             if (have_tabval) {
-                error(0, 0, _("'+' specifier not at start of number: %s"),
+                error(0, 0,
+                      _("'+' specifier not at start of number: "
+                        "%s"),
                       quote(stops));
                 ok = false;
             }
@@ -277,9 +281,10 @@ extern void set_file_list(char **list) {
    Open a filename of '-' as the standard input.
    Return NULL if there are no more input files.  */
 
-extern FILE *next_file(FILE *fp) {
+extern FILE *next_file(FILE *fp, FILE *temp_file) {
     static char *prev_file;
     char *file;
+    char const *temp_file_name = "EXTENDED_TEMP_mTwvB4qKbUEizRC91fWp";
 
     if (fp) {
         assert(prev_file);
@@ -292,6 +297,11 @@ extern FILE *next_file(FILE *fp) {
         else if (fclose(fp) != 0) {
             error(0, errno, "%s", quotef(prev_file));
             exit_status = EXIT_FAILURE;
+        } else {
+            /* replace the old file with the new expanded file */
+            fclose(temp_file);
+            remove(prev_file);
+            rename(temp_file_name, prev_file);
         }
     }
 

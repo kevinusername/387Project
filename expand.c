@@ -22,13 +22,12 @@
    Options:
    --tabs=tab1[,tab2[,...]]
    -t tab1[,tab2[,...]]
-   -tab1[,tab2[,...]]	If only one tab stop is given, set the tabs tab1
-                        columns apart instead of the default 8.  Otherwise,
-                        set the tabs at columns tab1, tab2, etc. (numbered from
-                        0); replace any tabs beyond the tab stops given with
-                        single spaces.
+   -tab1[,tab2[,...]]   If only one tab stop is given, set the tabs tab1
+                                                columns apart instead of the
+   default 8.  Otherwise, set the tabs at columns tab1, tab2, etc. (numbered
+   from 0); replace any tabs beyond the tab stops given with single spaces.
    --initial
-   -i			Only convert initial tabs on each line to spaces.
+   -i           Only convert initial tabs on each line to spaces.
 
    David MacKenzie <djm@gnu.ai.mit.edu> */
 
@@ -47,11 +46,10 @@
 /* The official name of this program (e.g., no 'g' prefix).  */
 #define PROGRAM_NAME "expand"
 
-#define AUTHORS proper_name("David MacKenzie, Kevin Peters, Michael West, Thomas Ochsner")
+#define AUTHORS                                                                \
+    proper_name("David MacKenzie, Kevin Peters, Michael West, Thomas Ochsner")
 
 static char const shortopts[] = "it:0::1::2::3::4::5::6::7::8::9::";
-char *og_file_name;
-char *temp_file_name;
 
 static struct option const longopts[] = {{"tabs", required_argument, NULL, 't'},
                                          {"initial", no_argument, NULL, 'i'},
@@ -91,19 +89,15 @@ Convert tabs in each FILE to spaces, writing to standard output.\n\
 /* Change tabs to spaces, writing to stdout.
    Read each file in 'file_list', in order.  */
 
-static void expand(char *file_name) {
+static void expand() {
     /* Input stream.  */
-    FILE *fp = next_file(NULL);
+    FILE *fp = next_file(NULL, NULL);
 
     /* generate a temporary file name, and open/create said file */
-    char *name_prefix = "expanded_";
-    temp_file_name = malloc(strlen(name_prefix) + strlen(file_name) + 1);
-    strcpy(temp_file_name, name_prefix);
-    strcat(temp_file_name, file_name);
+    char *const temp_file_name = "EXTENDED_TEMP_mTwvB4qKbUEizRC91fWp";
     FILE *new_file = fopen(temp_file_name, "w+");
 
     /* store original file name */
-    og_file_name = file_name;
 
     if (!fp)
         return;
@@ -127,8 +121,11 @@ static void expand(char *file_name) {
         /* Convert a line of text.  */
 
         do {
-            while ((c = getc(fp)) < 0 && (fp = next_file(fp)))
+            while ((c = getc(fp)) < 0 && (fp = next_file(fp, new_file))) {
+                new_file = fopen(temp_file_name, "w+");
+                fputc(' ', new_file);
                 continue;
+            }
 
             if (convert) {
                 if (c == '\t') {
@@ -163,23 +160,14 @@ static void expand(char *file_name) {
                 convert &= convert_entire_line || !!isblank(c);
             }
 
-            if (c < 0) {
-                fclose(new_file);
+            if (c < 0)
                 return;
-            }
 
             /* write current character to file */
             fputc(c, new_file);
 
         } while (c != '\n');
     }
-}
-
-void swap_files() {
-    /* replace the old file with the new expanded file */
-    remove(og_file_name);
-    rename(temp_file_name, og_file_name);
-    free(temp_file_name);
 }
 
 int main(int argc, char **argv) {
@@ -237,11 +225,9 @@ int main(int argc, char **argv) {
 
     set_file_list((optind < argc) ? &argv[optind] : NULL);
 
-    expand(argv[argc - 1]);
+    expand();
 
     cleanup_file_list_stdin();
-
-    swap_files();
 
     return exit_status;
 }
